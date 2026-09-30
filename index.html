@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>つなぐ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8ecf0; --ink:#1b2433; --sub:#5d6778; --card:#f6f8fa; --line:#cfd6de;
+  --c0:#2f86d6; --c1:#dc3a4f; --c2:#e39d12; --c3:#2f9e58; --c4:#7d52c4;
+  --display:"Dela Gothic One","Hiragino Sans","Noto Sans JP",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111a2a; --ink:#e9eef6; --sub:#95a1b4; --card:#1a2538; --line:#2a3850;
+    --c0:#5aa8f0; --c1:#ff6173; --c2:#ffbf3d; --c3:#4cc97a; --c4:#a883ec;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111a2a; --ink:#e9eef6; --sub:#95a1b4; --card:#1a2538; --line:#2a3850;
+  --c0:#5aa8f0; --c1:#ff6173; --c2:#ffbf3d; --c3:#4cc97a; --c4:#a883ec;
+  color-scheme:dark;
+}
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+html{ height:100%; scroll-padding-top:env(safe-area-inset-top,0px); background:var(--bg); }
+body{
+  height:100%; margin:0; background:var(--bg); color:var(--ink); font-family:var(--body);
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent; overscroll-behavior:none; overflow:hidden;
+}
+button{ font:inherit; color:inherit; border:0; background:none; padding:0; cursor:pointer; touch-action:manipulation; }
+:focus-visible{ outline:2px solid var(--c0); outline-offset:3px; }
+.hidden{ display:none !important; }
+
+#app{ height:100%; max-width:520px; margin:0 auto; position:relative; }
+.screen{ position:absolute; inset:0; display:flex; flex-direction:column; padding:16px 20px; overflow-y:auto; }
+
+/* はじめの画面 */
+.brand{ padding-top:5vh; }
+.mark{ width:76px; height:76px; display:block; }
+h1{ font-family:var(--display); font-weight:400; font-size:68px; line-height:1; letter-spacing:.04em; margin:14px 0 14px; }
+.lead{ color:var(--sub); font-size:15px; line-height:1.8; margin:0; max-width:23em; }
+.modes{ margin-top:30px; border-top:1px solid var(--line); }
+.mode{ width:100%; display:flex; align-items:center; gap:14px; padding:18px 4px; border-bottom:1px solid var(--line); text-align:left; }
+.mode:active{ background:var(--card); }
+.m-dot{ width:18px; height:18px; border-radius:50%; flex:none; }
+.mode[data-mode="time"] .m-dot{ background:var(--c1); }
+.mode[data-mode="moves"] .m-dot{ background:var(--c0); }
+.mode[data-mode="endless"] .m-dot{ background:var(--c3); }
+.m-text{ flex:1; display:flex; flex-direction:column; gap:3px; min-width:0; }
+.m-name{ font-family:var(--display); font-size:24px; line-height:1.2; }
+.m-desc{ font-size:13px; color:var(--sub); }
+.m-best{ font-size:12px; color:var(--sub); display:flex; flex-direction:column; align-items:flex-end; }
+.m-best b{ font-family:var(--display); font-weight:400; font-size:22px; color:var(--ink); font-variant-numeric:tabular-nums; }
+.foot{ margin-top:auto; padding-top:24px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; font-size:14px; color:var(--sub); }
+.foot b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+.toggles{ display:flex; flex-wrap:wrap; gap:8px; }
+.pill{ border:1px solid var(--line); border-radius:999px; padding:8px 16px; font-size:14px; font-weight:700; }
+
+/* あそぶ画面 */
+#game{ overflow:hidden; padding-bottom:12px; }
+.g-head{ display:flex; align-items:center; gap:12px; height:44px; flex:none; }
+.icon-btn{ width:44px; height:44px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; flex:none; }
+.icon-btn svg{ width:18px; height:18px; }
+.mode-label{ font-weight:700; color:var(--sub); flex:1; }
+.coins{ font-size:13px; color:var(--sub); }
+.coins b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+.hud{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:10px; flex:none; }
+.stat .k{ font-size:12px; color:var(--sub); font-weight:700; }
+.stat .v{ font-family:var(--display); font-size:46px; line-height:1.15; font-variant-numeric:tabular-nums; }
+.stat .v.low{ color:var(--c1); }
+.stat .v.frozen{ color:var(--c0); }
+.stat.right{ text-align:right; }
+.freeze{ font-size:12px; color:var(--c0); font-weight:700; min-height:1.3em; }
+.hint{ height:22px; line-height:22px; text-align:center; font-size:13px; font-weight:700; color:var(--sub); flex:none; }
+.board-wrap{ flex:1 1 0; min-height:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+#board{ display:block; touch-action:none; }
+.powers{ display:flex; gap:6px; flex:none; margin-top:8px; }
+.power{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:2px 0; }
+.p-icon{ width:52px; height:52px; border-radius:50%; background:var(--card); border:1.5px solid var(--line); display:grid; place-items:center; transition:transform .12s; }
+.p-icon svg{ width:24px; height:24px; }
+.p-name{ font-size:13px; font-weight:700; }
+.p-cost{ font-size:12px; color:var(--sub); font-variant-numeric:tabular-nums; }
+.power:active .p-icon{ transform:scale(.93); }
+.power.on .p-icon{ background:var(--ink); border-color:var(--ink); color:var(--bg); }
+.power.poor{ opacity:.45; }
+.power:disabled{ opacity:.22; cursor:default; }
+.shake{ animation:shake .3s; }
+@keyframes shake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-5px); } 75%{ transform:translateX(5px); } }
+.overlay{ position:absolute; inset:0; background:rgba(8,12,20,.45); display:grid; place-items:center; padding:24px; }
+.sheet{ background:var(--bg); border-radius:24px; padding:26px 22px 22px; width:100%; max-width:320px; display:flex; flex-direction:column; gap:10px; }
+.sheet h2{ font-family:var(--display); font-weight:400; font-size:26px; margin:0 0 8px; }
+.btn{ height:54px; border-radius:999px; font-weight:700; font-size:16px; border:1.5px solid var(--line); }
+.btn.primary{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.btn.danger{ background:var(--c1); color:#fff; border-color:var(--c1); }
+.sheet-note{ margin:-4px 0 8px; color:var(--sub); font-size:14px; line-height:1.6; }
+
+/* おわりの画面 */
+#result{ justify-content:center; }
+.res-mode{ color:var(--sub); font-weight:700; font-size:15px; }
+.res-score{ font-family:var(--display); font-size:112px; line-height:1; margin-top:12px; font-variant-numeric:tabular-nums; }
+.res-k{ color:var(--sub); font-size:14px; margin-top:6px; }
+.res-best{ margin-top:22px; font-weight:700; font-size:16px; }
+.res-best.new{ color:var(--c1); }
+.res-coins{ margin-top:6px; color:var(--sub); font-size:14px; }
+.res-btns{ display:flex; flex-direction:column; gap:10px; margin-top:40px; }
+
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <section id="title" class="screen">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 120 120" aria-hidden="true">
+        <path d="M24 24V60H60H96" fill="none" style="stroke:var(--c1)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="24" cy="24" r="11" style="fill:var(--c1)"/>
+        <circle cx="60" cy="24" r="11" style="fill:var(--c0)"/>
+        <circle cx="96" cy="24" r="11" style="fill:var(--c2)"/>
+        <circle cx="24" cy="60" r="11" style="fill:var(--c1)"/>
+        <circle cx="60" cy="60" r="11" style="fill:var(--c1)"/>
+        <circle cx="96" cy="60" r="11" style="fill:var(--c1)"/>
+        <circle cx="24" cy="96" r="11" style="fill:var(--c3)"/>
+        <circle cx="60" cy="96" r="11" style="fill:var(--c4)"/>
+        <circle cx="96" cy="96" r="11" style="fill:var(--c0)"/>
+      </svg>
+      <h1>つなぐ</h1>
+      <p class="lead">同じ色でとなりあう点を、指でなぞってつなぐと消えます。ぐるっと囲んで四角をつくると、その色がぜんぶ消えます。</p>
+    </div>
+    <div class="modes">
+      <button class="mode" data-mode="time">
+        <span class="m-dot"></span>
+        <span class="m-text"><span class="m-name">60秒</span><span class="m-desc">60秒でどれだけ消せるか</span></span>
+        <span class="m-best">ベスト<b>0</b></span>
+      </button>
+      <button class="mode" data-mode="moves">
+        <span class="m-dot"></span>
+        <span class="m-text"><span class="m-name">30手</span><span class="m-desc">30回つなぐまでにどれだけ消せるか</span></span>
+        <span class="m-best">ベスト<b>0</b></span>
+      </button>
+      <button class="mode" data-mode="endless">
+        <span class="m-dot"></span>
+        <span class="m-text"><span class="m-name">どこまでも</span><span class="m-desc">時間も回数もなし。やめたいときにおわれます</span></span>
+        <span class="m-best">ベスト<b>0</b></span>
+      </button>
+    </div>
+    <div class="foot">
+      <span>コイン <b id="coinsTitle">0</b></span>
+      <span class="toggles">
+        <button class="pill" id="assistBtn">色覚補助：なし</button>
+        <button class="pill" id="hapticBtn">振動：あり</button>
+        <button class="pill" id="soundBtn">音：あり</button>
+      </span>
+    </div>
+  </section>
+
+  <section id="game" class="screen hidden">
+    <header class="g-head">
+      <button class="icon-btn" id="pauseBtn" aria-label="ひと休み">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      </button>
+      <span class="mode-label" id="modeLabel">60秒</span>
+      <span class="coins">コイン <b id="coinsGame">0</b></span>
+    </header>
+    <div class="hud">
+      <div class="stat">
+        <div class="k" id="leftLabel">のこり秒</div>
+        <div class="v" id="leftVal">60</div>
+        <div class="freeze" id="freezeTag"></div>
+      </div>
+      <div class="stat right">
+        <div class="k">けした数</div>
+        <div class="v" id="scoreVal">0</div>
+        <div class="freeze"></div>
+      </div>
+    </div>
+    <div class="hint" id="hint"></div>
+    <div class="board-wrap" id="boardWrap"><canvas id="board" aria-label="ゲームの盤"></canvas></div>
+    <div class="powers">
+      <button class="power" data-p="freeze">
+        <span class="p-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="p-name">5秒とめる</span>
+        <span class="p-cost">120コイン</span>
+      </button>
+      <button class="power" data-p="shrink">
+        <span class="p-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.6 2.6"/></svg></span>
+        <span class="p-name">1つけす</span>
+        <span class="p-cost">60コイン</span>
+      </button>
+      <button class="power" data-p="expand">
+        <span class="p-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="3.4" fill="currentColor"/><circle cx="6" cy="16.5" r="3.4" fill="currentColor"/><circle cx="18" cy="16.5" r="3.4" fill="currentColor"/></svg></span>
+        <span class="p-name">1色けす</span>
+        <span class="p-cost">200コイン</span>
+      </button>
+    </div>
+    <div class="overlay hidden" id="pauseOverlay">
+      <div class="sheet" id="pauseMenu">
+        <h2>ひと休み</h2>
+        <button class="btn primary" id="resumeBtn">つづける</button>
+        <button class="btn" id="restartBtn">はじめからやりなおす</button>
+        <button class="btn" id="endBtn">ここでおわる</button>
+      </div>
+      <div class="sheet hidden" id="confirmSheet">
+        <h2 id="confirmTitle"></h2>
+        <p class="sheet-note" id="confirmNote"></p>
+        <button class="btn danger" id="confirmYes"></button>
+        <button class="btn" id="confirmNo">もどる</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="result" class="screen hidden">
+    <div class="res-mode" id="resMode">60秒</div>
+    <div class="res-score" id="resScore">0</div>
+    <div class="res-k">けした数</div>
+    <div class="res-best" id="resBest"></div>
+    <div class="res-coins" id="resCoins"></div>
+    <div class="res-btns">
+      <button class="btn primary" id="againBtn">もう一回</button>
+      <button class="btn" id="menuBtn">モードをえらぶ</button>
+    </div>
+  </section>
+
+</div>
+<script>
+(() => {
+  'use strict';
+  const N = 6, NC = 5, GRAV = 75;
+  const COST = { freeze: 120, shrink: 60, expand: 200 };
+  const MODE_NAME = { time: '60秒', moves: '30手', endless: 'どこまでも' };
+  const DISPLAY_FONT = '"Dela Gothic One","Hiragino Sans","Noto Sans JP",sans-serif';
+  const $ = (id) => document.getElementById(id);
+  let reduceMotion = false;
+  try { reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  // ---- 保存（この端末のブラウザの中だけ） ----
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('tsunagu:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('tsunagu:' + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  let coins = Number(store.get('coins', 300)) || 0;
+  let best = Object.assign({ time: 0, moves: 0, endless: 0 }, store.get('best', {}) || {});
+  let muted = !!store.get('muted', false);
+  let assist = !!store.get('assist', false);
+
+  // ---- 色 ----
+  let COLS = [], MARKS = [], INK = '#000', CARD = '#fff', LINE = '#ccc';
+  function lum(hex) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(x => x + x).join('');
+    const n = parseInt(h, 16);
+    const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  }
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    COLS = [0, 1, 2, 3, 4].map(i => cs.getPropertyValue('--c' + i).trim() || '#888888');
+    MARKS = COLS.map(() => 'rgba(255,255,255,0.95)');
+    INK = cs.getPropertyValue('--ink').trim() || '#000';
+    CARD = cs.getPropertyValue('--card').trim() || '#fff';
+    LINE = cs.getPropertyValue('--line').trim() || '#ccc';
+  }
+  function rgba(hex, a) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(x => x + x).join('');
+    const n = parseInt(h, 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+  readColors();
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors); } catch (e) {}
+  try { new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) {}
+
+  // ---- 音 ----
+  // 調はE♭。つなぐ音は 1・2・3・5・7 の5音（maj9 の和音に入る音だけ）
+  const TONIC = 311.13; // E♭4
+  const SCALE = [0, 2, 4, 7, 11];
+  const MELODY_TOP = 11, CHORD_TOP = 12;
+  const semis = (i) => SCALE[((i % 5) + 5) % 5] + 12 * Math.floor(i / 5);
+  const hz = (st) => TONIC * Math.pow(2, st / 12);
+  // 四角の和音：E♭/F（F13sus4）。一番上の音が何番目かごとに、その下に重ねる音。いちばん下はF4
+  const CHORDS = {
+    4: [2, 4, 7],
+    5: [2, 4, 7],
+    6: [2, 4, 7, 12],
+    7: [2, 7, 12],
+    8: [2, 7, 12, 16],
+    9: [2, 7, 12, 16],
+    10: [2, 12, 16, 19],
+    11: [2, 12, 19, 23],
+    12: [2, 12, 19, 23]
+  };
+  let actx = null, master = null;
+  function ensureAudio() {
+    if (muted) return;
+    try {
+      if (!actx) {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        master = actx.createGain(); master.gain.value = 0.9;
+        const dly = actx.createDelay(1), fb = actx.createGain(), wet = actx.createGain(), lp = actx.createBiquadFilter();
+        dly.delayTime.value = 0.21; fb.gain.value = 0.28; wet.gain.value = 0.2;
+        lp.type = 'lowpass'; lp.frequency.value = 2600;
+        master.connect(actx.destination);
+        master.connect(dly); dly.connect(lp); lp.connect(fb); fb.connect(dly); lp.connect(wet); wet.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+    } catch (e) {}
+  }
+  // エレピ風の音（アタックだけ明るく、すぐ丸くなる）
+  function ep(st, dur, vol, when) {
+    if (muted || !actx || !master) return;
+    try {
+      const f = hz(st), t = actx.currentTime + (when || 0);
+      const car = actx.createOscillator(), mod = actx.createOscillator(), mg = actx.createGain(), amp = actx.createGain();
+      car.type = 'sine'; mod.type = 'sine';
+      car.frequency.setValueAtTime(f, t); mod.frequency.setValueAtTime(f, t);
+      mg.gain.setValueAtTime(f * 1.3, t);
+      mg.gain.exponentialRampToValueAtTime(f * 0.04, t + 0.35);
+      amp.gain.setValueAtTime(0.0001, t);
+      amp.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+      amp.gain.exponentialRampToValueAtTime(vol * 0.35, t + 0.25);
+      amp.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      mod.connect(mg); mg.connect(car.frequency);
+      car.connect(amp); amp.connect(master);
+      car.start(t); mod.start(t); car.stop(t + dur + 0.05); mod.stop(t + dur + 0.05);
+    } catch (e) {}
+  }
+  function tone(freq, dur, type, vol, when) {
+    if (muted || !actx || !master) return;
+    try {
+      const t = actx.currentTime + (when || 0);
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'triangle';
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) {}
+  }
+  const sNote = (i) => ep(semis(Math.max(0, Math.min(i, MELODY_TOP))), 0.6, 0.2);
+  // 最後に鳴った音の1つ上を一番上にして、同時に鳴らす
+  function sLoop(lastIdx) {
+    const topIdx = Math.min(Math.max(lastIdx, 0) + 1, CHORD_TOP);
+    const top = semis(topIdx);
+    const under = CHORDS[Math.max(4, topIdx)];
+    under.forEach((st, k) => ep(st, 1.9, k === 0 ? 0.11 : 0.085, 0));
+    ep(top, 2.1, 0.16, 0);
+  }
+  const sPower = () => { ep(7, 0.5, 0.12); ep(14, 0.7, 0.12, 0.08); };
+  const sNo = () => tone(160, 0.14, 'square', 0.05);
+  const sEnd = () => [16, 11, 7, 4, 0].forEach((st, k) => ep(st, 0.9, 0.13, k * 0.1));
+  // ---- 振動 ----
+  let hapticOn = store.get('haptic', true) !== false;
+  const canVibrate = typeof navigator.vibrate === 'function';
+  // iPhone（iOS 18以降）：見えないスイッチを切りかえると、端末が軽くふるえる
+  function iosTick() {
+    try {
+      const label = document.createElement('label');
+      label.setAttribute('aria-hidden', 'true');
+      label.style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.setAttribute('switch', '');
+      label.appendChild(input);
+      document.head.appendChild(label);
+      label.click();
+      document.head.removeChild(label);
+    } catch (e) {}
+  }
+  const HAPTIC = {
+    tick:  { ms: 8,                      n: 1 },
+    loop:  { ms: [18, 40, 28],           n: 2 },
+    clear: { ms: 14,                     n: 1 },
+    power: { ms: 22,                     n: 1 },
+    no:    { ms: [10, 50, 10],           n: 2 },
+    end:   { ms: [30, 70, 30, 70, 60],   n: 3 }
+  };
+  function haptic(kind) {
+    if (!hapticOn) return;
+    const h = HAPTIC[kind];
+    if (!h) return;
+    if (canVibrate) { try { navigator.vibrate(h.ms); } catch (e) {} return; }
+    iosTick();
+    for (let i = 1; i < h.n; i++) setTimeout(iosTick, i * 90);
+  }
+
+  // ---- 盤の大きさ ----
+  const canvas = $('board'), ctx = canvas.getContext('2d');
+  let S = 0, CELL = 0;
+  function resize() {
+    const wrap = $('boardWrap');
+    const size = Math.max(160, Math.floor(Math.min(wrap.clientWidth, wrap.clientHeight)));
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    canvas.width = canvas.height = Math.round(size * dpr);
+    S = canvas.width; CELL = S / N;
+  }
+  try { new ResizeObserver(resize).observe($('boardWrap')); } catch (e) { addEventListener('resize', resize); }
+
+  // ---- ゲームの中身 ----
+  let state = null, uid = 0;
+  const rand = () => Math.floor(Math.random() * NC);
+  function randColor(ex) { let c; do { c = rand(); } while (c === ex); return c; }
+  function newDot(color, y) { return { color, y, vy: 0, k: 0, kv: 0, delay: 0, id: ++uid }; }
+
+  function hasMove() {
+    const g = state.grid;
+    for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+      const k = g[c][r].color;
+      if (c + 1 < N && g[c + 1][r].color === k) return true;
+      if (r + 1 < N && g[c][r + 1].color === k) return true;
+    }
+    return false;
+  }
+  function shuffle() {
+    const s = state;
+    do { for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) s.grid[c][r].color = rand(); } while (!hasMove());
+    s.fx.push({ kind: 'banner', text: 'まぜなおしました', t: 0, life: 1.2 });
+  }
+  function removeAndRefill(cells, exclude) {
+    const s = state;
+    const mark = Array.from({ length: N }, () => Array(N).fill(false));
+    cells.forEach(({ c, r }) => { mark[c][r] = true; });
+    for (let c = 0; c < N; c++) {
+      const keep = [];
+      let k = 0;
+      for (let r = 0; r < N; r++) {
+        const d = s.grid[c][r];
+        if (mark[c][r]) { k++; s.fx.push({ kind: 'pop', c, r, color: d.color, t: 0, life: 0.4 }); }
+        else keep.push(d);
+      }
+      const fresh = [];
+      for (let i = 0; i < k; i++) fresh.push(newDot(randColor(exclude), i - k));
+      s.grid[c] = fresh.concat(keep);
+    }
+  }
+  // 閉じた輪（最後の点が前に通った点に戻ったところまで）と、その内側の点
+  function loopInfo(path) {
+    const last = path[path.length - 1];
+    const j = path.findIndex(q => q.c === last.c && q.r === last.r);
+    const poly = path.slice(j, path.length - 1);
+    const onPath = new Set(path.map(q => q.c * N + q.r));
+    const inside = [];
+    for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+      if (onPath.has(c * N + r)) continue;
+      let inn = false;
+      for (let a = 0, b = poly.length - 1; a < poly.length; b = a++) {
+        const xa = poly[a].c, ya = poly[a].r, xb = poly[b].c, yb = poly[b].r;
+        if ((ya > r) !== (yb > r) && c < (xb - xa) * (r - ya) / (yb - ya) + xa) inn = !inn;
+      }
+      if (inn) inside.push({ c, r });
+    }
+    return { poly, inside };
+  }
+  function hasDup(path) {
+    const seen = new Set();
+    for (const q of path) { const k = q.c * N + q.r; if (seen.has(k)) return true; seen.add(k); }
+    return false;
+  }
+
+  function startGame(mode) {
+    state = {
+      mode, score: 0, timeLeft: 60, movesLeft: 30, freeze: 0,
+      grid: [], path: [], loop: false, inside: [], poly: [], dragging: false, pointer: null, pointerId: null, color: 0,
+      target: null, over: false, paused: false, fx: [], settled: false,
+      needsCheck: false, pendingEnd: false, newBest: false
+    };
+    do {
+      state.grid = [];
+      for (let c = 0; c < N; c++) {
+        const col = [];
+        for (let r = 0; r < N; r++) col.push(newDot(rand(), r - N - 1));
+        state.grid.push(col);
+      }
+    } while (!hasMove());
+    for (const k in hudCache) delete hudCache[k];
+    $('pauseOverlay').classList.add('hidden');
+    $('modeLabel').textContent = MODE_NAME[mode];
+    show('game');
+    resize();
+    updatePowers();
+    hud();
+  }
+
+  function commit() {
+    const s = state, color = s.color, last = s.path[s.path.length - 1];
+    let cells, exclude;
+    if (s.loop) {
+      const mark = new Set();
+      cells = [];
+      for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) if (s.grid[c][r].color === color) { cells.push({ c, r }); mark.add(c * N + r); }
+      for (const q of s.inside) if (!mark.has(q.c * N + q.r)) { cells.push(q); mark.add(q.c * N + q.r); }
+      exclude = color;
+      s.fx.push({ kind: 'flash', color, t: 0, life: 0.45 });
+    } else {
+      cells = s.path.slice();
+    }
+    haptic('clear');
+    s.score += cells.length;
+    s.fx.push({ kind: 'text', c: last.c, r: last.r, text: '+' + cells.length, color, t: 0, life: 0.8 });
+    removeAndRefill(cells, exclude);
+    if (s.mode === 'moves') {
+      s.movesLeft--;
+      if (s.movesLeft <= 0) { s.movesLeft = 0; s.pendingEnd = true; }
+    }
+    s.needsCheck = true;
+  }
+
+  function endDrag(ok) {
+    const s = state;
+    if (!s || !s.dragging) return;
+    s.dragging = false;
+    const uniq = new Set(s.path.map(q => q.c * N + q.r)).size;
+    if (ok && uniq >= 2 && !s.over) commit();
+    s.path = []; s.loop = false; s.pointer = null; s.inside = []; s.poly = [];
+  }
+
+  function endGame() {
+    const s = state;
+    if (!s || s.over) return;
+    endDrag(false);
+    s.over = true; s.target = null; s.paused = false;
+    if (s.score > best[s.mode]) { best[s.mode] = s.score; store.set('best', best); s.newBest = true; }
+    coins += s.score; store.set('coins', coins);
+    s.fx.push({ kind: 'banner', text: 'おしまい', t: 0, life: 0.9 });
+    sEnd(); haptic('end');
+    updatePowers();
+    const ref = s;
+    setTimeout(() => { if (state === ref) showResult(); }, 900);
+  }
+
+  function applyTarget(cell) {
+    const s = state, p = s.target, cost = COST[p];
+    if (coins < cost) { s.target = null; updatePowers(); return; }
+    coins -= cost; store.set('coins', coins);
+    let cells;
+    if (p === 'shrink') cells = [cell];
+    else {
+      const col = s.grid[cell.c][cell.r].color;
+      cells = [];
+      for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) if (s.grid[c][r].color === col) cells.push({ c, r });
+    }
+    const color = s.grid[cell.c][cell.r].color;
+    s.score += cells.length;
+    s.fx.push({ kind: 'text', c: cell.c, r: cell.r, text: '+' + cells.length, color, t: 0, life: 0.8 });
+    removeAndRefill(cells);
+    s.target = null; s.needsCheck = true;
+    sPower(); haptic('power');
+    updatePowers();
+  }
+
+  // ---- 指の動き ----
+  function toBoard(e) {
+    const rc = canvas.getBoundingClientRect();
+    return { x: (e.clientX - rc.left) * S / rc.width, y: (e.clientY - rc.top) * S / rc.height };
+  }
+  function cellAt(p, radius) {
+    const c = Math.floor(p.x / CELL), r = Math.floor(p.y / CELL);
+    if (c < 0 || r < 0 || c >= N || r >= N) return null;
+    if (radius) {
+      const dx = p.x - (c + 0.5) * CELL, dy = p.y - (r + 0.5) * CELL;
+      if (dx * dx + dy * dy > (radius * CELL) * (radius * CELL)) return null;
+    }
+    return { c, r };
+  }
+  function step(q) {
+    const s = state, cell = cellAt(q, 0.4);
+    if (!cell) return;
+    const path = s.path, last = path[path.length - 1];
+    if (cell.c === last.c && cell.r === last.r) return;
+    if (path.length >= 2) {
+      const prev = path[path.length - 2];
+      if (prev.c === cell.c && prev.r === cell.r) {
+        path.pop();
+        s.loop = hasDup(path);
+        if (!s.loop) { s.inside = []; s.poly = []; }
+        return;
+      }
+    }
+    if (s.loop) return;
+    if (Math.abs(cell.c - last.c) + Math.abs(cell.r - last.r) !== 1) return;
+    if (s.grid[cell.c][cell.r].color !== s.color) return;
+    const seen = path.some(q2 => q2.c === cell.c && q2.r === cell.r);
+    path.push(cell);
+    if (seen) {
+      s.loop = true;
+      const info = loopInfo(path);
+      s.poly = info.poly; s.inside = info.inside;
+      sLoop(path.length - 2); haptic('loop');
+    }
+    else { sNote(path.length - 1); haptic('tick'); }
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    const s = state;
+    if (!s || s.over || s.paused || s.pendingEnd || !s.settled || s.dragging) return;
+    ensureAudio();
+    const p = toBoard(e), cell = cellAt(p, 0);
+    if (!cell) return;
+    e.preventDefault();
+    if (s.target) { applyTarget(cell); return; }
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    s.dragging = true; s.pointerId = e.pointerId; s.pointer = p;
+    s.path = [cell]; s.loop = false; s.inside = []; s.poly = []; s.color = s.grid[cell.c][cell.r].color;
+    sNote(0); haptic('tick');
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    const s = state;
+    if (!s || !s.dragging || e.pointerId !== s.pointerId) return;
+    const p = toBoard(e), from = s.pointer || p;
+    const dist = Math.hypot(p.x - from.x, p.y - from.y);
+    const steps = Math.max(1, Math.ceil(dist / (CELL * 0.2)));
+    for (let i = 1; i <= steps; i++) {
+      step({ x: from.x + (p.x - from.x) * i / steps, y: from.y + (p.y - from.y) * i / steps });
+      if (!state || !state.dragging) return;
+    }
+    s.pointer = p;
+  });
+  canvas.addEventListener('pointerup', (e) => { if (state && e.pointerId === state.pointerId) endDrag(true); });
+  canvas.addEventListener('pointercancel', (e) => { if (state && e.pointerId === state.pointerId) endDrag(false); });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // ---- 表示 ----
+  const hudCache = {};
+  function setText(id, v) { if (hudCache[id] !== v) { hudCache[id] = v; $(id).textContent = v; } }
+  function hud() {
+    const s = state;
+    if (s.mode === 'time') { setText('leftLabel', 'のこり秒'); setText('leftVal', String(Math.ceil(s.timeLeft))); }
+    else if (s.mode === 'moves') { setText('leftLabel', 'のこり手'); setText('leftVal', String(s.movesLeft)); }
+    else { setText('leftLabel', 'のこり'); setText('leftVal', '∞'); }
+    setText('scoreVal', String(s.score));
+    setText('freezeTag', s.freeze > 0 ? `とまっている あと${Math.ceil(s.freeze)}秒` : '');
+    const lv = $('leftVal');
+    const low = (s.mode === 'time' && s.timeLeft <= 10 && s.freeze <= 0) || (s.mode === 'moves' && s.movesLeft <= 5);
+    lv.classList.toggle('low', low);
+    lv.classList.toggle('frozen', s.freeze > 0);
+  }
+  function updatePowers() {
+    const s = state;
+    document.querySelectorAll('.power').forEach((b) => {
+      const p = b.dataset.p;
+      if (p === 'freeze') b.querySelector('.p-name').textContent = (s && s.mode === 'moves') ? '5手たす' : '5秒とめる';
+      b.disabled = !s || s.over || (p === 'freeze' && s.mode === 'endless');
+      b.classList.toggle('poor', coins < COST[p]);
+      b.classList.toggle('on', !!s && s.target === p);
+    });
+    $('coinsGame').textContent = coins;
+    $('hint').textContent = !s ? '' : s.target === 'shrink' ? '消したい点をタップしてください'
+      : s.target === 'expand' ? '消したい色の点をタップしてください' : '';
+  }
+  function show(id) { ['title', 'game', 'result'].forEach(n => $(n).classList.toggle('hidden', n !== id)); }
+  function renderTitle() {
+    document.querySelectorAll('.mode').forEach(b => { b.querySelector('.m-best b').textContent = best[b.dataset.mode] || 0; });
+    $('coinsTitle').textContent = coins;
+    $('soundBtn').textContent = muted ? '音：なし' : '音：あり';
+    $('hapticBtn').textContent = hapticOn ? '振動：あり' : '振動：なし';
+    $('assistBtn').textContent = assist ? '色覚補助：あり' : '色覚補助：なし';
+  }
+  function showResult() {
+    const s = state;
+    $('resMode').textContent = MODE_NAME[s.mode];
+    $('resScore').textContent = s.score;
+    const rb = $('resBest');
+    if (s.newBest) { rb.textContent = 'ベストをぬりかえました'; rb.classList.add('new'); }
+    else { rb.textContent = 'ベスト ' + best[s.mode]; rb.classList.remove('new'); }
+    $('resCoins').textContent = `コイン +${s.score}（いま ${coins}）`;
+    show('result');
+  }
+
+  // ---- 描く ----
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function disc(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+  function ring(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke(); }
+  // 色覚補助のマーク：○ △ □ ＋ ●
+  function mark(ci, x, y, r) {
+    const m = r * 0.5;
+    ctx.save();
+    ctx.strokeStyle = ctx.fillStyle = MARKS[ci];
+    ctx.lineWidth = Math.max(1.5, r * 0.17);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath();
+    if (ci === 0) { ctx.arc(x, y, m * 0.8, 0, Math.PI * 2); ctx.stroke(); }
+    else if (ci === 1) {
+      const yy = y + m * 0.12;
+      ctx.moveTo(x, yy - m); ctx.lineTo(x + m * 0.95, yy + m * 0.65); ctx.lineTo(x - m * 0.95, yy + m * 0.65); ctx.closePath(); ctx.stroke();
+    }
+    else if (ci === 2) { ctx.rect(x - m * 0.72, y - m * 0.72, m * 1.44, m * 1.44); ctx.stroke(); }
+    else if (ci === 3) { ctx.moveTo(x - m, y); ctx.lineTo(x + m, y); ctx.moveTo(x, y - m); ctx.lineTo(x, y + m); ctx.stroke(); }
+    else { ctx.arc(x, y, m * 0.5, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+  }
+
+  function draw(time) {
+    const s = state;
+    if (!S) return;
+    ctx.clearRect(0, 0, S, S);
+    const R = CELL * 0.19, corner = CELL * 0.3;
+
+    for (const f of s.fx) if (f.kind === 'flash') {
+      ctx.fillStyle = rgba(COLS[f.color], 0.22 * (1 - f.t / f.life));
+      rrect(0, 0, S, S, corner); ctx.fill();
+    }
+    if (s.dragging && s.loop) {
+      ctx.fillStyle = rgba(COLS[s.color], 0.07); rrect(0, 0, S, S, corner); ctx.fill();
+      if (s.poly.length >= 4) {
+        ctx.fillStyle = rgba(COLS[s.color], 0.16);
+        ctx.beginPath();
+        s.poly.forEach((q, i) => { const x = (q.c + 0.5) * CELL, y = (q.r + 0.5) * CELL; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+        ctx.closePath(); ctx.fill();
+      }
+    }
+
+    if (s.dragging && s.path.length) {
+      ctx.strokeStyle = COLS[s.color];
+      ctx.lineWidth = CELL * 0.11; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath();
+      s.path.forEach((q, i) => {
+        const x = (q.c + 0.5) * CELL, y = (q.r + 0.5) * CELL;
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      });
+      if (!s.loop && s.pointer) ctx.lineTo(s.pointer.x, s.pointer.y);
+      ctx.stroke();
+    }
+
+    const pulse = reduceMotion ? 0.5 : 0.5 + 0.5 * Math.sin(time * 8);
+    const inPath = new Set(s.dragging ? s.path.map(q => q.c * N + q.r) : []);
+    const inLoop = new Set(s.dragging && s.loop ? s.inside.map(q => q.c * N + q.r) : []);
+    const picking = !!s.target && s.settled;
+    for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+      const d = s.grid[c][r];
+      const x = (c + 0.5) * CELL, y = (d.y + 0.5) * CELL;
+      if (y < -R * 2) continue;
+      const col = COLS[d.color];
+      const active = s.dragging && (inPath.has(c * N + r) || (s.loop && d.color === s.color));
+      if (!active && inLoop.has(c * N + r)) {
+        ctx.strokeStyle = rgba(COLS[s.color], 0.55 + 0.35 * pulse); ctx.lineWidth = CELL * 0.035;
+        ring(x, y, R * (1.5 + 0.1 * pulse));
+      }
+      if (active) { ctx.fillStyle = rgba(col, 0.16 + 0.12 * pulse); disc(x, y, R * (1.55 + 0.15 * pulse)); }
+      if (picking) { ctx.strokeStyle = rgba(col, 0.25 + 0.3 * pulse); ctx.lineWidth = CELL * 0.025; ring(x, y, R * 1.6); }
+      const rr = active ? R * 1.1 : R;
+      const st = (!reduceMotion && d.vy > 0) ? Math.min(0.14, d.vy * 0.008) : 0;
+      const sx = (1 + d.k) * (1 - st * 0.5), sy = (1 - d.k) * (1 + st);
+      ctx.save();
+      ctx.translate(x, y + rr * (1 - sy));
+      ctx.scale(sx, sy);
+      ctx.fillStyle = col;
+      disc(0, 0, rr);
+      if (assist) mark(d.color, 0, 0, rr);
+      ctx.restore();
+    }
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const f of s.fx) {
+      const k = f.t / f.life;
+      if (f.kind === 'pop') {
+        ctx.strokeStyle = rgba(COLS[f.color], 1 - k);
+        ctx.lineWidth = Math.max(1, CELL * 0.05 * (1 - k));
+        ring((f.c + 0.5) * CELL, (f.r + 0.5) * CELL, R * (1 + 1.3 * k));
+      } else if (f.kind === 'text') {
+        ctx.fillStyle = rgba(COLS[f.color], 1 - k * k);
+        ctx.font = `${Math.round(CELL * 0.34)}px ${DISPLAY_FONT}`;
+        const y = Math.max(CELL * 0.3, (f.r + 0.5) * CELL - CELL * 0.35 - CELL * 0.5 * k);
+        ctx.fillText(f.text, (f.c + 0.5) * CELL, y);
+      } else if (f.kind === 'banner') {
+        const a = k < 0.15 ? k / 0.15 : k > 0.8 ? (1 - k) / 0.2 : 1;
+        ctx.globalAlpha = Math.max(0, Math.min(1, a));
+        const w = S * 0.7, h = CELL * 0.85;
+        ctx.fillStyle = CARD; rrect((S - w) / 2, (S - h) / 2, w, h, h / 2); ctx.fill();
+        ctx.strokeStyle = LINE; ctx.lineWidth = Math.max(1, CELL * 0.015); ctx.stroke();
+        ctx.fillStyle = INK; ctx.font = `${Math.round(CELL * 0.28)}px ${DISPLAY_FONT}`;
+        ctx.fillText(f.text, S / 2, S / 2);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // ---- 時間の流れ ----
+  function update(dt) {
+    const s = state;
+    let moving = false;
+    for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+      const d = s.grid[c][r];
+      if (d.delay > 0) { d.delay -= dt; moving = true; continue; }
+      if (d.y < r || d.vy !== 0) {
+        d.vy += GRAV * dt; d.y += d.vy * dt;
+        if (d.y >= r) {
+          const v = d.vy;
+          d.y = r;
+          if (v > 3) {
+            d.vy = -v * 0.25;
+            if (!reduceMotion) d.kv += Math.min(v, 22) * 0.16;
+            moving = true;
+          } else d.vy = 0;
+        } else moving = true;
+      }
+      // 着地したときのつぶれ（ばねで戻る）
+      if (d.k !== 0 || d.kv !== 0) {
+        d.kv += (-380 * d.k - 14 * d.kv) * dt;
+        d.k += d.kv * dt;
+        if (Math.abs(d.k) < 0.001 && Math.abs(d.kv) < 0.02) { d.k = 0; d.kv = 0; }
+      }
+    }
+    s.settled = !moving;
+    for (const f of s.fx) f.t += dt;
+    s.fx = s.fx.filter(f => f.t < f.life);
+
+    if (!s.over && !s.paused) {
+      if (s.mode === 'time') {
+        if (s.freeze > 0) s.freeze = Math.max(0, s.freeze - dt);
+        else {
+          s.timeLeft -= dt;
+          if (s.timeLeft <= 0) { s.timeLeft = 0; if (s.dragging) endDrag(true); endGame(); }
+        }
+      }
+      if (s.settled && !s.over) {
+        if (s.needsCheck) { s.needsCheck = false; if (!hasMove()) shuffle(); }
+        if (s.pendingEnd) endGame();
+      }
+    }
+    hud();
+  }
+  let lastT = performance.now();
+  function frame(t) {
+    const dt = Math.min(0.05, Math.max(0, (t - lastT) / 1000));
+    lastT = t;
+    if (state) { update(dt); draw(t / 1000); }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---- ボタン ----
+  document.querySelectorAll('.power').forEach((b) => b.addEventListener('click', () => {
+    const s = state;
+    if (!s || s.over || s.paused) return;
+    ensureAudio();
+    const p = b.dataset.p, cost = COST[p];
+    if (s.target === p) { s.target = null; updatePowers(); return; }
+    if (coins < cost) {
+      b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+      sNo(); haptic('no'); return;
+    }
+    if (p === 'freeze') {
+      if (s.mode === 'endless') return;
+      coins -= cost; store.set('coins', coins);
+      if (s.mode === 'time') s.freeze += 5;
+      else { s.movesLeft += 5; s.pendingEnd = false; }
+      s.target = null;
+      sPower(); haptic('power');
+    } else {
+      s.target = p;
+    }
+    updatePowers();
+  }));
+
+  function pause() {
+    const s = state;
+    if (!s || s.over || s.paused) return;
+    endDrag(false);
+    s.paused = true;
+    showPauseMenu();
+    $('pauseOverlay').classList.remove('hidden');
+  }
+  function showPauseMenu() {
+    $('pauseMenu').classList.remove('hidden');
+    $('confirmSheet').classList.add('hidden');
+  }
+  let confirmKind = null;
+  function askConfirm(kind) {
+    confirmKind = kind;
+    const end = kind === 'end';
+    $('confirmTitle').textContent = end ? 'ここでおわりますか？' : 'はじめからやりなおしますか？';
+    $('confirmNote').textContent = end ? '今のけした数で記録します。' : '今のけした数は記録に残りません。';
+    $('confirmYes').textContent = end ? 'おわる' : 'やりなおす';
+    $('pauseMenu').classList.add('hidden');
+    $('confirmSheet').classList.remove('hidden');
+  }
+  function resume() {
+    if (!state) return;
+    state.paused = false;
+    $('pauseOverlay').classList.add('hidden');
+  }
+  $('pauseBtn').addEventListener('click', pause);
+  $('resumeBtn').addEventListener('click', resume);
+  $('restartBtn').addEventListener('click', () => askConfirm('restart'));
+  $('endBtn').addEventListener('click', () => askConfirm('end'));
+  $('confirmNo').addEventListener('click', showPauseMenu);
+  $('confirmYes').addEventListener('click', () => {
+    if (!state) return;
+    if (confirmKind === 'restart') { startGame(state.mode); return; }
+    $('pauseOverlay').classList.add('hidden');
+    state.paused = false;
+    endGame();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && state && !state.over && !$('game').classList.contains('hidden')) pause();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state && !$('game').classList.contains('hidden')) {
+      if (!state.paused) pause();
+      else if (!$('confirmSheet').classList.contains('hidden')) showPauseMenu();
+      else resume();
+    }
+  });
+
+  document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => { ensureAudio(); startGame(b.dataset.mode); }));
+  $('againBtn').addEventListener('click', () => { if (state) startGame(state.mode); });
+  $('menuBtn').addEventListener('click', () => { state = null; renderTitle(); show('title'); });
+  $('assistBtn').addEventListener('click', () => {
+    assist = !assist; store.set('assist', assist);
+    renderTitle();
+  });
+  $('hapticBtn').addEventListener('click', () => {
+    hapticOn = !hapticOn; store.set('haptic', hapticOn);
+    renderTitle();
+    haptic('tick');
+  });
+  $('soundBtn').addEventListener('click', () => {
+    muted = !muted; store.set('muted', muted);
+    if (!muted) ensureAudio();
+    renderTitle();
+  });
+
+  renderTitle();
+})();
+</script>
+</body>
+</html>
